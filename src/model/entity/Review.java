@@ -12,7 +12,7 @@ package model.entity;
 //    FOREIGN KEY (item_id) REFERENCES menu_items(id)
 //);
 
-import java.security.Timestamp;
+import java.sql.Timestamp;
 
 public class Review {
     private int id;
@@ -88,7 +88,6 @@ public class Review {
         this.createdAt = createdAt;
     }
 
-    // ====== hỗ trợ in bảng ======
     public String[] toRow() {
         return new String[]{
                 String.valueOf(id),

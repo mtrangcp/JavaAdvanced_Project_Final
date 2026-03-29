@@ -8,7 +8,7 @@ package model.entity;
 //    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 //);
 
-import java.security.Timestamp;
+import java.sql.Timestamp;
 
 public class Payment {
     private int id;

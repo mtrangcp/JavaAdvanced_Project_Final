@@ -1,50 +1,137 @@
 package dao;
 
-import db.DbConnection;
 import model.constants.TableStatus;
 import model.entity.Table;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class TableDAO {
-    public boolean addTable(Table table) {
-        String sql = "INSERT INTO tables (table_name, capacity, status) VALUES (?, ?, ?)";
+    private final Connection conn;
 
-        try (Connection conn = DbConnection.openConnection();
-             PreparedStatement pstmt = Objects.requireNonNull(conn).prepareStatement(sql)) {
-            pstmt.setString(1, table.getTableName());
-            pstmt.setInt(2, table.getCapacity());
-            pstmt.setString(3, TableStatus.AVAILABLE.name());
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+    public TableDAO(Connection conn) {
+        this.conn = conn;
     }
 
-    public List<Table> getAllTables() {
+    public boolean insert(Table table) {
+        String sql = "INSERT INTO tables (table_name, capacity, status) VALUES (?, ?, ?)";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, table.getTableName());
+            ps.setInt(2, table.getCapacity());
+            ps.setString(3, table.getStatus().name());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public List<Table> findAll() {
         List<Table> list = new ArrayList<>();
         String sql = "SELECT * FROM tables";
-        try (Connection conn = DbConnection.openConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
             while (rs.next()) {
-                list.add(new Table(
-                        rs.getInt("id"),
-                        rs.getString("table_name"),
-                        rs.getInt("capacity"),
-                        TableStatus.valueOf(rs.getString("status"))
-                ));
+                list.add(mapResultSet(rs));
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return list;
     }
 
+    public Table findById(int id) {
+        String sql = "SELECT * FROM tables WHERE id = ?";
 
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
 
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapResultSet(rs);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<Table> findAvailableTables() {
+        List<Table> list = new ArrayList<>();
+        String sql = "SELECT * FROM tables WHERE status = 'AVAILABLE'";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean update(Table table) {
+        String sql = "UPDATE tables SET table_name=?, capacity=?, status=? WHERE id=?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, table.getTableName());
+            ps.setInt(2, table.getCapacity());
+            ps.setString(3, table.getStatus().name());
+            ps.setInt(4, table.getId());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean delete(int id) {
+        String sql = "DELETE FROM tables WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean updateStatus(int id, TableStatus status) {
+        String sql = "UPDATE tables SET status = ? WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            ps.setInt(2, id);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // map db -> obj
+    private Table mapResultSet(ResultSet rs) throws SQLException {
+        return new Table(
+                rs.getInt("id"),
+                rs.getString("table_name"),
+                rs.getInt("capacity"),
+                TableStatus.valueOf(rs.getString("status"))
+        );
+    }
 }

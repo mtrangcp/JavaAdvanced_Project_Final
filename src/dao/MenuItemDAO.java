@@ -1,127 +1,200 @@
 package dao;
 
 import db.DbConnection;
+import model.constants.ItemStatus;
 import model.constants.ItemType;
 import model.entity.MenuItem;
 import utils.Color;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class MenuItemDAO {
+    private final Connection conn;
 
-    public boolean addMenuItem(MenuItem menuItem) {
-        if (menuItem.getPrice() <= 0) {
-            System.out.println(Color.RED + "Giá tiền không hợp lệ! add DAO" + Color.RESET);
-            return false;
-        }
+    public MenuItemDAO(Connection conn) {
+        this.conn = conn;
+    }
 
-        String sql = "INSERT INTO menu_items (name, price, stock, type) VALUES (?, ?, ?, ?)";
+    public boolean insert(MenuItem item) {
+        String sql = "INSERT INTO menu_items (name, price, stock, type, status) VALUES (?, ?, ?, ?, ?)";
 
-        try (
-                Connection conn = DbConnection.openConnection();
-                PreparedStatement pstmt = Objects.requireNonNull(conn).prepareStatement(sql);
-        ) {
-            pstmt.setString(1, menuItem.getName());
-            pstmt.setDouble(2, menuItem.getPrice());
-            pstmt.setInt(3, menuItem.getStock());
-            pstmt.setString(4, String.valueOf(menuItem.getType()));
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, item.getName());
+            ps.setDouble(2, item.getPrice());
 
-            return pstmt.executeUpdate() > 0;
+            if (item.getStock() == null) {
+                ps.setNull(3, Types.INTEGER);
+            } else {
+                ps.setInt(3, item.getStock());
+            }
+
+            ps.setString(4, item.getType().name());
+            ps.setString(5, item.getStatus().name());
+
+            return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
         }
+        return false;
     }
 
-    public boolean updateMenuItem(MenuItem menuItem) {
-        if (menuItem.getPrice() <= 0) {
-            System.out.println(Color.RED + "Giá tiền không hợp lệ! update DAO" + Color.RESET);
-            return false;
-        }
-
-        String sql = "UPDATE menu_items SET name = ?, price = ?, stock = ?, type = ? WHERE id = ?";
-        try (Connection conn = DbConnection.openConnection();
-             PreparedStatement pstmt = Objects.requireNonNull(conn).prepareStatement(sql)) {
-
-            pstmt.setString(1, menuItem.getName());
-            pstmt.setDouble(2, menuItem.getPrice());
-            pstmt.setInt(3, menuItem.getStock());
-            pstmt.setString(4, menuItem.getType().name());
-            pstmt.setInt(5, menuItem.getId());
-
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean deleteMenuItem(int id) {
-        String sql = "DELETE FROM menu_items WHERE id = ?";
-
-        try (Connection conn = DbConnection.openConnection();
-             PreparedStatement pstmt = Objects.requireNonNull(conn).prepareStatement(sql)) {
-
-            pstmt.setInt(1, id);
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public List<MenuItem> getAll() {
+    public List<MenuItem> findAll() {
         List<MenuItem> list = new ArrayList<>();
         String sql = "SELECT * FROM menu_items";
 
-        try (Connection conn = DbConnection.openConnection();
-             PreparedStatement pstmt = Objects.requireNonNull(conn).prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                list.add(mapResultSetToEntity(rs));
+                list.add(mapResultSet(rs));
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return list;
     }
 
-    public List<MenuItem> findByName(String name) {
+    public MenuItem findById(int id) {
+        String sql = "SELECT * FROM menu_items WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapResultSet(rs);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<MenuItem> findAvailable() {
         List<MenuItem> list = new ArrayList<>();
-        String sql = "SELECT * FROM menu_items WHERE name LIKE ?";
+        String sql = "SELECT * FROM menu_items WHERE status = 'AVAILABLE'";
 
-        try (Connection conn = DbConnection.openConnection();
-             PreparedStatement pstmt = Objects.requireNonNull(conn).prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-            pstmt.setString(1, "%" + name + "%");
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapResultSetToEntity(rs));
-                }
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return list;
     }
 
+    public List<MenuItem> findByType(ItemType type) {
+        List<MenuItem> list = new ArrayList<>();
+        String sql = "SELECT * FROM menu_items WHERE type = ?";
 
-    private MenuItem mapResultSetToEntity(ResultSet rs) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, type.name());
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean update(MenuItem item) {
+        String sql = "UPDATE menu_items SET name=?, price=?, stock=?, type=?, status=? WHERE id=?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, item.getName());
+            ps.setDouble(2, item.getPrice());
+
+            if (item.getStock() == null) {
+                ps.setNull(3, Types.INTEGER);
+            } else {
+                ps.setInt(3, item.getStock());
+            }
+
+            ps.setString(4, item.getType().name());
+            ps.setString(5, item.getStatus().name());
+            ps.setInt(6, item.getId());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean delete(int id) {
+        String sql = "DELETE FROM menu_items WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean updateStatus(int id, ItemStatus status) {
+        String sql = "UPDATE menu_items SET status = ? WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+            ps.setInt(2, id);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean updateStock(int id, Integer stock) {
+        String sql = "UPDATE menu_items SET stock = ? WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            if (stock == null) {
+                ps.setNull(1, Types.INTEGER);
+            } else {
+                ps.setInt(1, stock);
+            }
+
+            ps.setInt(2, id);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private MenuItem mapResultSet(ResultSet rs) throws SQLException {
+        Integer stock = rs.getObject("stock") == null ? null : rs.getInt("stock");
+
         return new MenuItem(
                 rs.getInt("id"),
                 rs.getString("name"),
                 rs.getDouble("price"),
-                rs.getInt("stock"),
-                ItemType.valueOf(rs.getString("type"))
+                stock,
+                ItemType.valueOf(rs.getString("type")),
+                ItemStatus.valueOf(rs.getString("status"))
         );
     }
-
 }
