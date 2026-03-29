@@ -14,6 +14,7 @@ public class DbConnection {
 
         try {
             Class.forName(DRIVER);
+            System.out.println("Kết nối db thành công!");
             return DriverManager.getConnection(URL, USERNAME, PASSWORD);
         } catch (ClassNotFoundException e) {
             System.err.println("Chưa cài đặt MySql Driver");
@@ -24,4 +25,7 @@ public class DbConnection {
         return null;
     }
 
+//    public static void main(String[] args) {
+//        DbConnection.openConnection();
+//    }
 }

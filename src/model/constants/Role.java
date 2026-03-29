@@ -1,10 +1,10 @@
 package model.constants;
 
-public enum UserRole {
+public enum Role {
     MANAGER,CHEF, CUSTOMER;
 
-    public static UserRole fromString(String role) {
-        for (UserRole r : UserRole.values()) {
+    public static Role fromString(String role) {
+        for (Role r : Role.values()) {
             if (r.name().equalsIgnoreCase(role)) {
                 return r;
             }
