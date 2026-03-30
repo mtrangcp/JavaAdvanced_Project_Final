@@ -85,4 +85,61 @@ public class TableService {
     public List<Table> getAvailableTables() {
         return tableDAO.findByStatus(TableStatus.AVAILABLE);
     }
+
+    public Table findByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new AppException("Tên bàn không được để trống");
+        }
+
+        Table table = tableDAO.findByName(name.trim());
+
+        if (table == null) {
+            throw new AppException("Không tìm thấy bàn");
+        }
+        return table;
+    }
+
+    public List<Table> findByStatus(TableStatus status) {
+        if (status == null) {
+            throw new AppException("Trạng thái không hợp lệ");
+        }
+
+        List<Table> list = tableDAO.findByStatus(status);
+
+        if (list == null || list.isEmpty()) {
+            throw new AppException("Không có bàn nào phù hợp");
+        }
+
+        return list;
+    }
+
+    public void update(int id, String name, int capacity, TableStatus status) {
+        if (id <= 0) {
+            throw new AppException("ID không hợp lệ");
+        }
+        if (name == null || name.trim().isEmpty()) {
+            throw new AppException("Tên bàn không được để trống");
+        }
+        if (capacity <= 0) {
+            throw new AppException("Sức chứa phải > 0");
+        }
+        if (status == null) {
+            throw new AppException("Trạng thái không hợp lệ");
+        }
+        Table existing = tableDAO.findById(id);
+        if (existing == null) {
+            throw new AppException("Bàn không tồn tại");
+        }
+
+        existing.setTableName(name.trim());
+        existing.setCapacity(capacity);
+        existing.setStatus(status);
+
+        boolean success = tableDAO.update(existing);
+
+        if (!success) {
+            throw new AppException("Cập nhật thất bại");
+        }
+    }
+
 }

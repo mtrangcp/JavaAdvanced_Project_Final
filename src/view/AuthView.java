@@ -3,7 +3,6 @@ package view;
 import exception.AppException;
 import model.entity.User;
 import service.UserService;
-
 import java.util.Scanner;
 
 public class AuthView {

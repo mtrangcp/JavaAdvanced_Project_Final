@@ -1,16 +1,16 @@
 package view;
 
+import service.MenuItemService;
+import service.TableService;
 import java.util.Scanner;
 
 public class ManagerView {
     private final Scanner scanner;
-
     public ManagerView(Scanner scanner) {
         this.scanner = scanner;
     }
 
     public void start() {
-
         while (true) {
             System.out.println("\n===== MANAGER MENU =====");
             System.out.println("1. Quản lý bàn");
@@ -35,6 +35,5 @@ public class ManagerView {
             }
         }
     }
-
 
 }
