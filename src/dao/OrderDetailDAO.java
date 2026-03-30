@@ -34,6 +34,15 @@ public class OrderDetailDAO {
         return false;
     }
 
+    public boolean addItem(int orderId, int itemId, int quantity) {
+        OrderDetail od = new OrderDetail();
+        od.setOrderId(orderId);
+        od.setItemId(itemId);
+        od.setQuantity(quantity);
+        od.setStatus(OrderDetailStatus.PENDING);
+        return insert(od);
+    }
+
     public List<OrderDetail> findByOrder(int orderId) {
         List<OrderDetail> list = new ArrayList<>();
         String sql = "SELECT * FROM order_details WHERE order_id = ?";
@@ -122,7 +131,5 @@ public class OrderDetailDAO {
                 OrderDetailStatus.valueOf(rs.getString("status"))
         );
     }
-
-
 
 }

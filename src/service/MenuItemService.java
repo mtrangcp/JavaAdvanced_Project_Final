@@ -35,7 +35,6 @@ public class MenuItemService {
         return menuItemDAO.findAll();
     }
 
-    // ===== FIND BY ID =====
     public MenuItem findById(int id) {
         MenuItem item = menuItemDAO.findById(id);
 

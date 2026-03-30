@@ -1,8 +1,7 @@
-import dao.MenuItemDAO;
-import dao.TableDAO;
-import dao.UserDAO;
+import dao.*;
 import db.DbConnection;
 import service.MenuItemService;
+import service.OrderService;
 import service.TableService;
 import service.UserService;
 import view.AuthView;
@@ -19,12 +18,15 @@ public class RestaurantApp {
         UserDAO userDAO = new UserDAO(conn);
         TableDAO tableDAO = new TableDAO(conn);
         MenuItemDAO menuItemDAO = new MenuItemDAO(conn);
+        OrderDAO orderDAO = new OrderDAO(conn);
+        OrderDetailDAO  orderDetailDAO = new OrderDetailDAO(conn);
 
         UserService userService = new UserService(userDAO);
         TableService tableService = new TableService(tableDAO);
         MenuItemService menuItemService = new MenuItemService(menuItemDAO);
+        OrderService orderService = new OrderService(conn, orderDAO, orderDetailDAO, menuItemDAO);
 
-        AuthView authView = new AuthView(userService,tableService, menuItemService, scanner);
+        AuthView authView = new AuthView(userService,tableService, menuItemService, orderService, scanner);
 
         authView.start();
     }

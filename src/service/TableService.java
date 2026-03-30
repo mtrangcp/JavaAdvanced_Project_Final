@@ -65,6 +65,18 @@ public class TableService {
         return true;
     }
 
+    public void occupyTable(int tableId) {
+        Table table = findById(tableId);
+        if (table.getStatus() != TableStatus.AVAILABLE) {
+            throw new AppException("Bàn đã có người hoặc không khả dụng");
+        }
+
+        boolean success = tableDAO.updateStatus(tableId, TableStatus.OCCUPIED);
+        if (!success) {
+            throw new AppException("Không thể cập nhật trạng thái bàn");
+        }
+    }
+
     public boolean delete(int tableId) {
 
         Table table = findById(tableId);
@@ -83,7 +95,7 @@ public class TableService {
     }
 
     public List<Table> getAvailableTables() {
-        return tableDAO.findByStatus(TableStatus.AVAILABLE);
+        return tableDAO.findAvailableTables();
     }
 
     public Table findByName(String name) {

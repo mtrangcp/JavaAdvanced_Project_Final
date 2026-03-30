@@ -3,6 +3,7 @@ package view;
 import exception.AppException;
 import model.entity.User;
 import service.MenuItemService;
+import service.OrderService;
 import service.TableService;
 import service.UserService;
 import java.util.Scanner;
@@ -12,14 +13,17 @@ public class AuthView {
     private final Scanner scanner;
     private final TableService tableService;
     private final MenuItemService menuItemService;
+    private final OrderService orderService;
+
     public AuthView(UserService userService,
                     TableService tableService,
-                    MenuItemService menuItemService,
-                    Scanner scanner) {
+                    MenuItemService menuItemService
+                    , OrderService orderService, Scanner scanner) {
         this.userService = userService;
         this.tableService = tableService;
         this.menuItemService = menuItemService;
         this.scanner = scanner;
+        this.orderService = orderService;
     }
 
     public void start() {
@@ -89,7 +93,11 @@ public class AuthView {
                     new ChefView(scanner).start();
                     break;
                 case CUSTOMER:
-                    new CustomerView(scanner).start();
+                    new CustomerView(scanner,
+                            tableService,
+                            menuItemService,
+                            orderService,
+                            user.getId()).start();
                     break;
             }
 
