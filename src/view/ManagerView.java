@@ -2,12 +2,22 @@ package view;
 
 import service.MenuItemService;
 import service.TableService;
+import view.manager.MenuItemManagementView;
+import view.manager.TableManagementView;
+
 import java.util.Scanner;
 
 public class ManagerView {
     private final Scanner scanner;
-    public ManagerView(Scanner scanner) {
+    private final TableService tableService;
+    private final MenuItemService menuItemService;
+
+    public ManagerView(Scanner scanner,
+                       TableService tableService,
+                       MenuItemService menuItemService) {
         this.scanner = scanner;
+        this.tableService = tableService;
+        this.menuItemService = menuItemService;
     }
 
     public void start() {
@@ -22,10 +32,10 @@ public class ManagerView {
 
             switch (choice) {
                 case "1":
-                    System.out.println("TODO: Table Management");
+                    new TableManagementView(scanner, tableService).start();
                     break;
                 case "2":
-                    System.out.println("TODO: Menu Management");
+                    new MenuItemManagementView(scanner, menuItemService).start();
                     break;
                 case "0":
                     System.out.println("Thoát menu manager");

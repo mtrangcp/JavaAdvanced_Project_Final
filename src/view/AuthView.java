@@ -2,15 +2,23 @@ package view;
 
 import exception.AppException;
 import model.entity.User;
+import service.MenuItemService;
+import service.TableService;
 import service.UserService;
 import java.util.Scanner;
 
 public class AuthView {
     private final UserService userService;
     private final Scanner scanner;
-
-    public AuthView(UserService userService, Scanner scanner) {
+    private final TableService tableService;
+    private final MenuItemService menuItemService;
+    public AuthView(UserService userService,
+                    TableService tableService,
+                    MenuItemService menuItemService,
+                    Scanner scanner) {
         this.userService = userService;
+        this.tableService = tableService;
+        this.menuItemService = menuItemService;
         this.scanner = scanner;
     }
 
@@ -75,7 +83,7 @@ public class AuthView {
 
             switch (user.getRole()) {
                 case MANAGER:
-                    new ManagerView(scanner).start();
+                    new ManagerView(scanner, tableService, menuItemService).start();
                     break;
                 case CHEF:
                     new ChefView(scanner).start();
@@ -89,8 +97,5 @@ public class AuthView {
             System.out.println("Lỗi: " + e.getMessage());
         }
     }
-
-
-
 
 }
