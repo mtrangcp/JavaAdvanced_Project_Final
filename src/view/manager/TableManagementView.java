@@ -91,12 +91,13 @@ public class TableManagementView {
         System.out.print("Nhập tên: ");
         String name = scanner.nextLine();
 
-        Table table = tableService.findByName(name);
-
-        if (table == null) {
-            System.out.println("Không tìm thấy");
-        } else {
+        try {
+            Table table = tableService.findByName(name);
             System.out.println(table);
+
+        } catch (AppException e) {
+            System.out.println("Không tìm thấy");
+            System.out.println(e.getMessage());
         }
     }
 
