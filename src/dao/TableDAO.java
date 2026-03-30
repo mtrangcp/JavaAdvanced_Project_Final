@@ -134,4 +134,39 @@ public class TableDAO {
                 TableStatus.valueOf(rs.getString("status"))
         );
     }
+
+    public Table findByName(String tableName) {
+        String sql = "SELECT * FROM tables WHERE table_name = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapResultSet(rs);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<Table> findByStatus(TableStatus status) {
+        List<Table> list = new ArrayList<>();
+        String sql = "SELECT * FROM tables WHERE status = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

@@ -16,6 +16,12 @@ public class Table {
 
     public Table() {
     }
+    public Table(String tableName, int capacity, TableStatus status) {
+        this.tableName = tableName;
+        this.capacity = capacity;
+        this.status = status;
+    }
+
 
     public Table(int id, String tableName, int capacity, TableStatus status) {
         this.id = id;

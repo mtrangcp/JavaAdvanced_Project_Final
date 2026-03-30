@@ -40,6 +40,14 @@ public class MenuItem {
         this.status = ItemStatus.AVAILABLE;
     }
 
+    public MenuItem(String name, double price, Integer stock, ItemType type, ItemStatus itemStatus) {
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+        this.type = type;
+        this.status = ItemStatus.AVAILABLE;
+    }
+
     public int getId() {
         return id;
     }
