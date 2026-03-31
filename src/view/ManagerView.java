@@ -25,6 +25,9 @@ public class ManagerView {
             System.out.println("\n===== MANAGER MENU =====");
             System.out.println("1. Quản lý bàn");
             System.out.println("2. Quản lý menu");
+            System.out.println("3. Duyệt Order");
+            System.out.println("4. Quản lý User(Ban/UnBan)");
+
             System.out.println("0. Đăng xuất");
 
             System.out.print("Chọn: ");

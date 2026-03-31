@@ -17,8 +17,7 @@ public class CustomerView {
     private final TableService tableService;
     private final MenuItemService menuItemService;
     private final OrderService orderService;
-
-    private final int userId; // truyền từ login
+    private final int userId;
 
     public CustomerView(Scanner scanner,
                         TableService tableService,
@@ -35,11 +34,17 @@ public class CustomerView {
     public void start() {
 
         while (true) {
-            System.out.println("\n===== CUSTOMER MENU =====");
-            System.out.println("1. Xem menu");
-            System.out.println("2. Gọi món");
-            System.out.println("3. Xem order của tôi");
-            System.out.println("0. Đăng xuất");
+            System.out.println("""
+                    \n===== CUSTOMER MENU =====
+                    1. Xem menu
+                    2. Chọn bàn
+                    3. Gọi món
+                    4. Xem món đã gọi
+                    5. Hủy món
+                    6. Thanh toán (nâng cao)
+                    7. Đánh giá dịch vụ (nâng cao)
+                    0. Đăng xuất
+                    """);
 
             int choice = InputValidator.inputInt(scanner, "Chọn: ");
 

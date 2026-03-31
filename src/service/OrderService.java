@@ -175,7 +175,6 @@ public class OrderService {
                 throw new AppException("Order chưa hoàn tất");
             }
 
-            // tránh thanh toán 2 lần
             if (paymentDAO.existsByOrderId(orderId)) {
                 throw new AppException("Order đã thanh toán");
             }
@@ -186,10 +185,10 @@ public class OrderService {
             payment.setOrderId(orderId);
             payment.setTotalAmount(total);
 
-            boolean ok1 = paymentDAO.insert(payment);
-            boolean ok2 = tableDAO.updateStatus(order.getTableId(), TableStatus.AVAILABLE);
+            boolean check1 = paymentDAO.insert(payment);
+            boolean check2 = tableDAO.updateStatus(order.getTableId(), TableStatus.AVAILABLE);
 
-            if (!ok1 || !ok2) {
+            if (!check1 || !check2) {
                 throw new AppException("Checkout thất bại");
             }
 
