@@ -2,5 +2,6 @@ package model.constants;
 
 public enum TableStatus {
     AVAILABLE,
-    OCCUPIED
+    OCCUPIED,
+    INACTIVE
 }

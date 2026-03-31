@@ -3,10 +3,7 @@ package dao;
 import model.constants.OrderDetailStatus;
 import model.entity.OrderDetail;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,19 +75,32 @@ public class OrderDetailDAO {
         return null;
     }
 
-    public boolean updateQuantity(int id, int quantity) {
-        String sql = "UPDATE order_details SET quantity = ? WHERE id = ?";
+    // ================= CHEF VIEW (QUAN TRỌNG) =================
+    public List<OrderDetail> findPendingApprovedItems() {
+        List<OrderDetail> list = new ArrayList<>();
 
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, quantity);
-            ps.setInt(2, id);
+        String sql = """
+                SELECT  od.id, t.table_name, m.name AS item_name, od.quantity, od.status
+                FROM order_details od
+                JOIN orders o ON od.order_id = o.id
+                JOIN tables t ON o.table_id = t.id
+                JOIN menu_items m ON od.item_id = m.id
+                WHERE od.status = 'PENDING'
+                AND o.status = 'APPROVED'
+                ORDER BY o.created_at
+                """;
 
-            return ps.executeUpdate() > 0;
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false;
+        return list;
     }
 
     public boolean updateStatus(int id, OrderDetailStatus status) {
@@ -108,13 +118,21 @@ public class OrderDetailDAO {
         return false;
     }
 
-    // hủy món
-    public boolean delete(int id) {
-        String sql = "DELETE FROM order_details WHERE id = ?";
+    public boolean checkAllServed(int orderId) {
+        String sql = """
+                SELECT COUNT(*) 
+                FROM order_details 
+                WHERE order_id = ? 
+                AND status != 'SERVED'
+                """;
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
+            ps.setInt(1, orderId);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) == 0;
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -122,6 +140,30 @@ public class OrderDetailDAO {
         return false;
     }
 
+    // ================= CHECKOUT =================
+    public double calculateTotal(int orderId) {
+        String sql = """
+                SELECT SUM(m.price * od.quantity) AS total
+                FROM order_details od
+                JOIN menu_items m ON od.item_id = m.id
+                WHERE od.order_id = ?
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("total");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // ================= MAP =================
     private OrderDetail mapResultSet(ResultSet rs) throws SQLException {
         return new OrderDetail(
                 rs.getInt("id"),
@@ -131,5 +173,4 @@ public class OrderDetailDAO {
                 OrderDetailStatus.valueOf(rs.getString("status"))
         );
     }
-
 }

@@ -62,7 +62,6 @@ public class CustomerView {
         }
     }
 
-    // ================= VIEW MENU =================
     private void viewMenu() {
         List<MenuItem> list = menuItemService.getAvailable();
 
@@ -80,7 +79,6 @@ public class CustomerView {
         }
     }
 
-    // orde foood
     private void orderFood() {
         try {
             // chon ban
@@ -129,7 +127,6 @@ public class CustomerView {
         }
     }
 
-    // ================= VIEW MY ORDERS =================
     private void viewMyOrders() {
         List<Order> list = orderService.getOrdersByUser(userId);
 

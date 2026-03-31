@@ -16,7 +16,6 @@ public class ReviewDAO {
         this.conn = conn;
     }
 
-    // ====== CREATE ======
     public boolean insert(Review review) {
         String sql = "INSERT INTO reviews (user_id, item_id, rating, comment) VALUES (?, ?, ?, ?)";
 
@@ -34,7 +33,6 @@ public class ReviewDAO {
         return false;
     }
 
-    // ====== FIND BY ITEM ======
     public List<Review> findByItem(int itemId) {
         List<Review> list = new ArrayList<>();
         String sql = "SELECT * FROM reviews WHERE item_id = ?";
@@ -53,7 +51,6 @@ public class ReviewDAO {
         return list;
     }
 
-    // ====== FIND BY USER ======
     public List<Review> findByUser(int userId) {
         List<Review> list = new ArrayList<>();
         String sql = "SELECT * FROM reviews WHERE user_id = ?";
@@ -72,7 +69,6 @@ public class ReviewDAO {
         return list;
     }
 
-    // ====== READ ALL ======
     public List<Review> findAll() {
         List<Review> list = new ArrayList<>();
         String sql = "SELECT * FROM reviews";
@@ -90,7 +86,6 @@ public class ReviewDAO {
         return list;
     }
 
-    // ====== DELETE ======
     public boolean delete(int id) {
         String sql = "DELETE FROM reviews WHERE id = ?";
 

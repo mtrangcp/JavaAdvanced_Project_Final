@@ -77,22 +77,22 @@ public class TableService {
         }
     }
 
-    public boolean delete(int tableId) {
-
-        Table table = findById(tableId);
-
-        if (table.getStatus() == TableStatus.OCCUPIED) {
-            throw new AppException("Không thể xóa bàn đang có khách");
-        }
-
-        boolean success = tableDAO.delete(tableId);
-
-        if (!success) {
-            throw new AppException("Xóa bàn thất bại");
-        }
-
-        return true;
-    }
+//    public boolean delete(int tableId) {
+//
+//        Table table = findById(tableId);
+//
+//        if (table.getStatus() == TableStatus.OCCUPIED) {
+//            throw new AppException("Không thể xóa bàn đang có khách");
+//        }
+//
+//        boolean success = tableDAO.delete(tableId);
+//
+//        if (!success) {
+//            throw new AppException("Xóa bàn thất bại");
+//        }
+//
+//        return true;
+//    }
 
     public List<Table> getAvailableTables() {
         return tableDAO.findAvailableTables();

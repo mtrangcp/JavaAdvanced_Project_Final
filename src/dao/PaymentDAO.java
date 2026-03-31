@@ -2,10 +2,7 @@ package dao;
 
 import model.entity.Payment;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,8 +19,27 @@ public class PaymentDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, payment.getOrderId());
             ps.setDouble(2, payment.getTotalAmount());
-
             return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            // duplicate order_id (do UNIQUE)
+            if (e.getMessage().contains("Duplicate")) {
+                throw new RuntimeException("Order đã thanh toán");
+            }
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean existsByOrderId(int orderId) {
+        String sql = "SELECT 1 FROM payments WHERE order_id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -37,9 +53,8 @@ public class PaymentDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, orderId);
 
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return mapResultSet(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapResultSet(rs);
             }
 
         } catch (SQLException e) {
@@ -50,7 +65,7 @@ public class PaymentDAO {
 
     public List<Payment> findAll() {
         List<Payment> list = new ArrayList<>();
-        String sql = "SELECT * FROM payments";
+        String sql = "SELECT * FROM payments ORDER BY payment_time DESC";
 
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -65,6 +80,20 @@ public class PaymentDAO {
         return list;
     }
 
+    public double getTotalRevenue() {
+        String sql = "SELECT SUM(total_amount) FROM payments";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) return rs.getDouble(1);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     private Payment mapResultSet(ResultSet rs) throws SQLException {
         return new Payment(
                 rs.getInt("id"),
@@ -73,6 +102,4 @@ public class PaymentDAO {
                 rs.getTimestamp("payment_time")
         );
     }
-
-
 }

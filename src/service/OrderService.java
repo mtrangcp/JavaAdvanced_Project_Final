@@ -1,12 +1,9 @@
 package service;
 
-import dao.MenuItemDAO;
-import dao.OrderDAO;
-import dao.OrderDetailDAO;
+import dao.*;
 import exception.AppException;
-import model.constants.OrderStatus;
-import model.entity.MenuItem;
-import model.entity.Order;
+import model.constants.*;
+import model.entity.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -17,85 +14,206 @@ public class OrderService {
     private final OrderDAO orderDAO;
     private final OrderDetailDAO orderDetailDAO;
     private final MenuItemDAO menuItemDAO;
+    private final PaymentDAO paymentDAO;
+    private final TableDAO tableDAO;
 
     public OrderService(Connection conn,
                         OrderDAO orderDAO,
                         OrderDetailDAO orderDetailDAO,
-                        MenuItemDAO menuItemDAO) {
+                        MenuItemDAO menuItemDAO,
+                        PaymentDAO paymentDAO,
+                        TableDAO tableDAO) {
         this.conn = conn;
         this.orderDAO = orderDAO;
         this.orderDetailDAO = orderDetailDAO;
         this.menuItemDAO = menuItemDAO;
+        this.paymentDAO = paymentDAO;
+        this.tableDAO = tableDAO;
     }
 
     public int createOrder(int userId, int tableId) {
-        if (userId <= 0 || tableId <= 0) {
-            throw new AppException("Dữ liệu không hợp lệ");
+        try {
+            conn.setAutoCommit(false);
+
+            if (userId <= 0 || tableId <= 0) {
+                throw new AppException("Dữ liệu không hợp lệ");
+            }
+
+            Table table = tableDAO.findById(tableId);
+            if (table == null) {
+                throw new AppException("Bàn không tồn tại");
+            }
+
+            if (table.getStatus() != TableStatus.AVAILABLE) {
+                throw new AppException("Bàn không khả dụng");
+            }
+
+            Order order = new Order();
+            order.setUserId(userId);
+            order.setTableId(tableId);
+            order.setStatus(OrderStatus.PENDING);
+
+            int orderId = orderDAO.insert(order);
+
+            if (orderId <= 0) {
+                throw new AppException("Tạo order thất bại");
+            }
+
+            tableDAO.updateStatus(tableId, TableStatus.OCCUPIED);
+
+            conn.commit();
+            return orderId;
+
+        } catch (Exception e) {
+            try { conn.rollback(); } catch (SQLException ignored) {}
+            throw new AppException(e.getMessage());
         }
-
-        Order order = new Order();
-        order.setUserId(userId);
-        order.setTableId(tableId);
-
-        return orderDAO.insert(order);
     }
 
-    //
     public void addItem(int orderId, int itemId, int quantity) {
         if (quantity <= 0) {
             throw new AppException("Số lượng phải > 0");
         }
 
+        Order order = orderDAO.findById(orderId);
+        if (order == null) {
+            throw new AppException("Order không tồn tại");
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new AppException("Chỉ thêm món khi order PENDING");
+        }
+
+        MenuItem item = menuItemDAO.findById(itemId);
+        if (item == null || item.getStatus() != ItemStatus.AVAILABLE) {
+            throw new AppException("Món không tồn tại hoặc không bán");
+        }
+
+        orderDetailDAO.addItem(orderId, itemId, quantity);
+    }
+
+    public void approveOrder(int orderId) {
         try {
             conn.setAutoCommit(false);
 
-            MenuItem item = menuItemDAO.findById(itemId);
-            if (item == null || !item.getStatus().equals("AVAILABLE")) {
-                throw new AppException("Món không tồn tại hoặc không còn bán");
+            Order order = orderDAO.findById(orderId);
+            if (order == null) {
+                throw new AppException("Order không tồn tại");
             }
 
-            if (item.getStock() != null && item.getStock() < quantity) {
-                throw new AppException("Không đủ món");
+            if (order.getStatus() != OrderStatus.PENDING) {
+                throw new AppException("Chỉ duyệt order PENDING");
             }
 
-            orderDetailDAO.addItem(orderId, itemId, quantity);
-
-            if (item.getStock() != null) {
-                item.setStock(item.getStock() - quantity);
-                menuItemDAO.update(item);
+            List<OrderDetail> items = orderDetailDAO.findByOrder(orderId);
+            if (items.isEmpty()) {
+                throw new AppException("Order không có món");
             }
+
+            // check stock
+            for (OrderDetail od : items) {
+                MenuItem item = menuItemDAO.findById(od.getItemId());
+
+                if (item.getStock() != null && item.getStock() < od.getQuantity()) {
+                    throw new AppException("Không đủ hàng: " + item.getName());
+                }
+            }
+
+            // trừ stock
+            for (OrderDetail od : items) {
+                MenuItem item = menuItemDAO.findById(od.getItemId());
+
+                if (item.getStock() != null) {
+                    item.setStock(item.getStock() - od.getQuantity());
+                    menuItemDAO.update(item);
+                }
+            }
+
+            orderDAO.updateStatus(orderId, OrderStatus.APPROVED);
+
             conn.commit();
 
         } catch (Exception e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ignored) {
-            }
+            try { conn.rollback(); } catch (SQLException ignored) {}
             throw new AppException(e.getMessage());
         }
     }
 
+    public void cancelOrder(int orderId) {
+        Order order = orderDAO.findById(orderId);
+
+        if (order == null) {
+            throw new AppException("Order không tồn tại");
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new AppException("Chỉ hủy khi chưa duyệt");
+        }
+
+        orderDAO.updateStatus(orderId, OrderStatus.CANCELLED);
+        tableDAO.updateStatus(order.getTableId(), TableStatus.AVAILABLE);
+    }
+
+    // ================= AUTO DONE =================
+    public void updateOrderIfDone(int orderId) {
+        boolean allServed = orderDetailDAO.checkAllServed(orderId);
+
+        if (allServed) {
+            orderDAO.updateStatus(orderId, OrderStatus.DONE);
+        }
+    }
+
+    // ================= CHECKOUT =================
+    public double checkout(int orderId) {
+        try {
+            conn.setAutoCommit(false);
+
+            Order order = orderDAO.findById(orderId);
+            if (order == null) {
+                throw new AppException("Order không tồn tại");
+            }
+
+            if (order.getStatus() != OrderStatus.DONE) {
+                throw new AppException("Order chưa hoàn tất");
+            }
+
+            // tránh thanh toán 2 lần
+            if (paymentDAO.existsByOrderId(orderId)) {
+                throw new AppException("Order đã thanh toán");
+            }
+
+            double total = orderDetailDAO.calculateTotal(orderId);
+
+            Payment payment = new Payment();
+            payment.setOrderId(orderId);
+            payment.setTotalAmount(total);
+
+            boolean ok1 = paymentDAO.insert(payment);
+            boolean ok2 = tableDAO.updateStatus(order.getTableId(), TableStatus.AVAILABLE);
+
+            if (!ok1 || !ok2) {
+                throw new AppException("Checkout thất bại");
+            }
+
+            conn.commit();
+            return total;
+
+        } catch (Exception e) {
+            try { conn.rollback(); } catch (SQLException ignored) {}
+            throw new AppException(e.getMessage());
+        }
+    }
+
+    // ================= QUERY =================
     public List<Order> getOrdersByUser(int userId) {
         return orderDAO.findByUser(userId);
     }
 
-    public void checkout(int orderId) {
-        try {
-            conn.setAutoCommit(false);
-
-            boolean ok = orderDAO.updateStatus(orderId, OrderStatus.DONE);
-            if (!ok) {
-                throw new AppException("Thanh toán thất bại");
-            }
-            conn.commit();
-
-        } catch (Exception e) {
-            try {
-                conn.rollback();
-            } catch (SQLException ignored) {
-            }
-            throw new AppException(e.getMessage());
-        }
+    public List<Order> getPendingOrders() {
+        return orderDAO.findByStatus(OrderStatus.PENDING);
     }
 
+    public List<Order> getApprovedOrders() {
+        return orderDAO.findByStatus(OrderStatus.APPROVED);
+    }
 }

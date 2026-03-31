@@ -130,7 +130,7 @@ public class TableManagementView {
         System.out.print("ID cần xóa: ");
         int id = Integer.parseInt(scanner.nextLine());
 
-        tableService.delete(id);
+        tableService.updateStatus(id, TableStatus.INACTIVE );
         System.out.println("Xóa thành công!");
     }
 

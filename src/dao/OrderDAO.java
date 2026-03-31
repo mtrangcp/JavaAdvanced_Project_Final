@@ -22,12 +22,9 @@ public class OrderDAO {
             ps.setInt(2, order.getTableId());
             ps.setString(3, order.getStatus().name());
 
-            int affected = ps.executeUpdate();
-
-            if (affected > 0) {
-                ResultSet rs = ps.getGeneratedKeys();
-                if (rs.next()) {
-                    return rs.getInt(1);
+            if (ps.executeUpdate() > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) return rs.getInt(1);
                 }
             }
 
@@ -39,7 +36,7 @@ public class OrderDAO {
 
     public List<Order> findAll() {
         List<Order> list = new ArrayList<>();
-        String sql = "SELECT * FROM orders";
+        String sql = "SELECT * FROM orders ORDER BY created_at DESC";
 
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -60,9 +57,8 @@ public class OrderDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
 
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return mapResultSet(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapResultSet(rs);
             }
 
         } catch (SQLException e) {
@@ -73,14 +69,15 @@ public class OrderDAO {
 
     public List<Order> findByUser(int userId) {
         List<Order> list = new ArrayList<>();
-        String sql = "SELECT * FROM orders WHERE user_id = ?";
+        String sql = "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapResultSet(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSet(rs));
+                }
             }
 
         } catch (SQLException e) {
@@ -91,14 +88,53 @@ public class OrderDAO {
 
     public List<Order> findByTable(int tableId) {
         List<Order> list = new ArrayList<>();
-        String sql = "SELECT * FROM orders WHERE table_id = ?";
+        String sql = "SELECT * FROM orders WHERE table_id = ? ORDER BY created_at DESC";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, tableId);
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapResultSet(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSet(rs));
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Order> findApprovedOrders() {
+        List<Order> list = new ArrayList<>();
+        String sql = "SELECT * FROM orders WHERE status = ? ORDER BY created_at ASC";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, OrderStatus.APPROVED.name());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSet(rs));
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Order> findByStatus(OrderStatus status) {
+        List<Order> list = new ArrayList<>();
+        String sql = "SELECT * FROM orders WHERE status = ? ORDER BY created_at ASC";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSet(rs));
+                }
             }
 
         } catch (SQLException e) {
@@ -122,11 +158,13 @@ public class OrderDAO {
         return false;
     }
 
-    public boolean delete(int id) {
-        String sql = "DELETE FROM orders WHERE id = ?";
+    public boolean cancelOrder(int id) {
+        String sql = "UPDATE orders SET status = ? WHERE id = ?";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
+            ps.setString(1, OrderStatus.CANCELLED.name());
+            ps.setInt(2, id);
+
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {

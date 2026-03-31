@@ -2,6 +2,7 @@ package dao;
 
 import model.constants.TableStatus;
 import model.entity.Table;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,6 @@ public class TableDAO {
             ps.setString(1, table.getTableName());
             ps.setInt(2, table.getCapacity());
             ps.setString(3, table.getStatus().name());
-
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -31,7 +31,7 @@ public class TableDAO {
 
     public List<Table> findAll() {
         List<Table> list = new ArrayList<>();
-        String sql = "SELECT * FROM tables";
+        String sql = "SELECT * FROM tables ORDER BY id";
 
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -52,9 +52,8 @@ public class TableDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
 
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return mapResultSet(rs);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapResultSet(rs);
             }
 
         } catch (SQLException e) {
@@ -63,21 +62,43 @@ public class TableDAO {
         return null;
     }
 
-    public List<Table> findAvailableTables() {
+    public Table findByName(String tableName) {
+        String sql = "SELECT * FROM tables WHERE table_name = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, tableName);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapResultSet(rs);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<Table> findByStatus(TableStatus status) {
         List<Table> list = new ArrayList<>();
-        String sql = "SELECT * FROM tables WHERE status = 'AVAILABLE'";
+        String sql = "SELECT * FROM tables WHERE status = ? ORDER BY id";
 
-        try (PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status.name());
 
-            while (rs.next()) {
-                list.add(mapResultSet(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSet(rs));
+                }
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public List<Table> findAvailableTables() {
+        return findByStatus(TableStatus.AVAILABLE);
     }
 
     public boolean update(Table table) {
@@ -89,19 +110,6 @@ public class TableDAO {
             ps.setString(3, table.getStatus().name());
             ps.setInt(4, table.getId());
 
-            return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public boolean delete(int id) {
-        String sql = "DELETE FROM tables WHERE id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -125,7 +133,6 @@ public class TableDAO {
         return false;
     }
 
-    // map db -> obj
     private Table mapResultSet(ResultSet rs) throws SQLException {
         return new Table(
                 rs.getInt("id"),
@@ -133,40 +140,5 @@ public class TableDAO {
                 rs.getInt("capacity"),
                 TableStatus.valueOf(rs.getString("status"))
         );
-    }
-
-    public Table findByName(String tableName) {
-        String sql = "SELECT * FROM tables WHERE table_name = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, tableName);
-
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return mapResultSet(rs);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public List<Table> findByStatus(TableStatus status) {
-        List<Table> list = new ArrayList<>();
-        String sql = "SELECT * FROM tables WHERE status = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status.name());
-
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapResultSet(rs));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
     }
 }
