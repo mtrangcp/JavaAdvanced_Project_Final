@@ -33,42 +33,6 @@ public class ReviewDAO {
         return false;
     }
 
-    public List<Review> findByItem(int itemId) {
-        List<Review> list = new ArrayList<>();
-        String sql = "SELECT * FROM reviews WHERE item_id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, itemId);
-
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapResultSet(rs));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    public List<Review> findByUser(int userId) {
-        List<Review> list = new ArrayList<>();
-        String sql = "SELECT * FROM reviews WHERE user_id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                list.add(mapResultSet(rs));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
     public List<Review> findAll() {
         List<Review> list = new ArrayList<>();
         String sql = "SELECT * FROM reviews";

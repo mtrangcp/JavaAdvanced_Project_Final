@@ -17,17 +17,13 @@ public class MenuItemService {
     }
 
     public boolean create(String name, double price, Integer stock, ItemType type) {
-
         MenuItemValidator.validateCreate(name, price, stock, type);
-
         MenuItem item = new MenuItem(name, price, stock, type, ItemStatus.AVAILABLE);
 
         boolean success = menuItemDAO.insert(item);
-
         if (!success) {
             throw new AppException("Thêm món thất bại");
         }
-
         return true;
     }
 

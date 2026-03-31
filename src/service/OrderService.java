@@ -34,7 +34,6 @@ public class OrderService {
     public int createOrder(int userId, int tableId) {
         try {
             conn.setAutoCommit(false);
-
             if (userId <= 0 || tableId <= 0) {
                 throw new AppException("Dữ liệu không hợp lệ");
             }
@@ -54,7 +53,6 @@ public class OrderService {
             order.setStatus(OrderStatus.PENDING);
 
             int orderId = orderDAO.insert(order);
-
             if (orderId <= 0) {
                 throw new AppException("Tạo order thất bại");
             }

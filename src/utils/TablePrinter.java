@@ -14,7 +14,7 @@ public class TablePrinter {
         for (String[] row : rows) {
             for (int i = 0; i < row.length; i++) {
                 if (row[i] != null) {
-                    colWidths[i] = Math.max(colWidths[i], row[i].length());
+                    colWidths[i] = Math.max(colWidths[i], stripColor(row[i]).length());
                 }
             }
         }
@@ -52,6 +52,10 @@ public class TablePrinter {
             System.out.print(" ".repeat(colWidths[i] - value.length() + 1) + "|");
         }
         System.out.println();
+    }
+
+    private static String stripColor(String str) {
+        return str.replaceAll("\u001B\\[[;\\d]*m", "");
     }
 
 }

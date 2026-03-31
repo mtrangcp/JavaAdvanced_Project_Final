@@ -23,4 +23,8 @@ public class InputValidator {
     }
 
 
+    public static String inputString(Scanner scanner, String s) {
+
+
+    }
 }

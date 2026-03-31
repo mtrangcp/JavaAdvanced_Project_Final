@@ -14,6 +14,7 @@ import model.constants.Role;
 import utils.Color;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class User {
 
@@ -98,26 +99,10 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    @Override
-    public String toString() {
-        return String.format(
-                "| %-3d | %-15s | %-20s | %-10s | %-8s | %-20s |",
-                id,
-                username,
-                fullName,
-                role,
-                isActive ? "ACTIVE" : "INACTIVE",
-                createdAt
-        );
-    }
     public static String[] getHeader() {
         return new String[]{
                 "ID", "USERNAME", "FULL NAME", "ROLE", "STATUS", "CREATED AT"
         };
-    }
-
-    public static String getLine() {
-        return "+-----+-----------------+----------------------+------------+----------+----------------------+";
     }
 
     public String[] toRow() {
@@ -130,7 +115,7 @@ public class User {
                 username,
                 fullName,
                 role.name(),
-                isActive ? "ACTIVE" : "INACTIVE",
+                statusStr,
                 createdAt == null ? "" : createdAt.toString()
         };
     }

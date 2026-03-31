@@ -10,7 +10,7 @@ import java.util.Scanner;
 
 public class ChefView {
     private final Scanner scanner;
-    private final OrderDetailService  orderDetailService;
+    private final OrderDetailService orderDetailService;
 
     public ChefView(Scanner scanner, OrderDetailService orderDetailService) {
         this.scanner = scanner;
@@ -19,21 +19,24 @@ public class ChefView {
 
     public void start() {
         while (true) {
-            System.out.println("\n===== CHEF MENU =====");
-            System.out.println("1. Xem món đang chờ (PENDING)");
-            System.out.println("2. Cập nhật trạng thái món");
-            System.out.println("0. Thoát");
+            System.out.println("""
+                    \n===== CHEF MENU =====
+                    1. Xem danh sách món
+                    2. Cập nhật trạng thái món
+                    0. Đăng xuất
+                    """);
 
             int choice = InputValidator.inputInt(scanner, "Chọn: ");
 
             switch (choice) {
                 case 1:
-                    viewPending();
+                    viewItems();
                     break;
                 case 2:
                     updateStatus();
                     break;
                 case 0:
+                    System.out.println("Đăng xuất Chef...");
                     return;
                 default:
                     System.out.println("Sai lựa chọn");
@@ -41,17 +44,20 @@ public class ChefView {
         }
     }
 
-    private void viewPending() {
-        List<OrderDetail> list = orderDetailService.getPendingItems();
+    private void viewItems() {
+        List<OrderDetail> list = orderDetailService.getActiveItems();
 
         if (list.isEmpty()) {
-            System.out.println("Không có món nào đang chờ");
+            System.out.println("Không có món nào");
             return;
         }
 
-        System.out.println("\n===== DANH SÁCH PENDING =====");
+        System.out.println("\n===== DANH SÁCH MÓN =====");
+        System.out.printf("%-5s %-8s %-8s %-8s %-12s\n",
+                "ID", "Order", "Item", "Qty", "Status");
+
         for (OrderDetail od : list) {
-            System.out.printf("ID: %d | Order: %d | Item: %d | Qty: %d | Status: %s\n",
+            System.out.printf("%-5d %-8d %-8d %-8d %-12s\n",
                     od.getId(),
                     od.getOrderId(),
                     od.getItemId(),
@@ -62,14 +68,17 @@ public class ChefView {
 
     private void updateStatus() {
         try {
-            int id = InputValidator.inputInt(scanner, "Nhập ID món: ");
+            viewItems();
+
+            int id = InputValidator.inputInt(scanner, "Nhập ID món (0 để thoát): ");
+            if (id == 0) return;
 
             orderDetailService.updateStatus(id);
-            System.out.println("Cập nhật thành công!");
+
+            System.out.println("Cập nhật trạng thái thành công!");
+
         } catch (AppException e) {
             System.out.println("Lỗi: " + e.getMessage());
         }
     }
-
-
 }

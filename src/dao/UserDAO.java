@@ -106,19 +106,6 @@ public class UserDAO {
         return false;
     }
 
-    public boolean delete(int id) {
-        String sql = "DELETE FROM users WHERE id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     private User mapResultSet(ResultSet rs) throws SQLException {
         return new User(
                 rs.getInt("id"),

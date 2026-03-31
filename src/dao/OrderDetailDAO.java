@@ -75,24 +75,28 @@ public class OrderDetailDAO {
         return null;
     }
 
-    // ================= CHEF VIEW (QUAN TRỌNG) =================
-    public List<OrderDetail> findPendingApprovedItems() {
+    public List<OrderDetail> findByStatuses(OrderDetailStatus... statuses) {
         List<OrderDetail> list = new ArrayList<>();
+        if (statuses == null || statuses.length == 0) {
+            return list;
+        }
 
-        String sql = """
-                SELECT  od.id, t.table_name, m.name AS item_name, od.quantity, od.status
-                FROM order_details od
-                JOIN orders o ON od.order_id = o.id
-                JOIN tables t ON o.table_id = t.id
-                JOIN menu_items m ON od.item_id = m.id
-                WHERE od.status = 'PENDING'
-                AND o.status = 'APPROVED'
-                ORDER BY o.created_at
-                """;
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < statuses.length; i++) {
+            placeholders.append("?");
+            if (i < statuses.length - 1) {
+                placeholders.append(", ");
+            }
+        }
 
-        try (PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        String sql = "SELECT * FROM order_details WHERE status IN (" + placeholders + ")";
 
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < statuses.length; i++) {
+                ps.setString(i + 1, statuses[i].name());
+            }
+
+            ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 list.add(mapResultSet(rs));
             }
@@ -140,7 +144,6 @@ public class OrderDetailDAO {
         return false;
     }
 
-    // ================= CHECKOUT =================
     public double calculateTotal(int orderId) {
         String sql = """
                 SELECT SUM(m.price * od.quantity) AS total
@@ -163,7 +166,6 @@ public class OrderDetailDAO {
         return 0;
     }
 
-    // ================= MAP =================
     private OrderDetail mapResultSet(ResultSet rs) throws SQLException {
         return new OrderDetail(
                 rs.getInt("id"),
@@ -173,4 +175,6 @@ public class OrderDetailDAO {
                 OrderDetailStatus.valueOf(rs.getString("status"))
         );
     }
+
+
 }

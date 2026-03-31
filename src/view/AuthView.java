@@ -30,7 +30,6 @@ public class AuthView {
     }
 
     public void start() {
-
         while (true) {
             System.out.println("\n===== RESTAURANT SYSTEM =====");
             System.out.println("1. Đăng ký");
@@ -90,7 +89,7 @@ public class AuthView {
 
             switch (user.getRole()) {
                 case MANAGER:
-                    new ManagerView(scanner, tableService, menuItemService).start();
+                    new ManagerView(scanner, tableService, menuItemService, orderService, userService).start();
                     break;
                 case CHEF:
                     new ChefView(scanner, orderDetailService).start();

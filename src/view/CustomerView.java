@@ -19,6 +19,9 @@ public class CustomerView {
     private final OrderService orderService;
     private final int userId;
 
+    private Integer currentTableId = null;
+    private Integer currentOrderId = null;
+
     public CustomerView(Scanner scanner,
                         TableService tableService,
                         MenuItemService menuItemService,
@@ -32,17 +35,15 @@ public class CustomerView {
     }
 
     public void start() {
-
         while (true) {
             System.out.println("""
                     \n===== CUSTOMER MENU =====
                     1. Xem menu
                     2. Chọn bàn
                     3. Gọi món
-                    4. Xem món đã gọi
-                    5. Hủy món
-                    6. Thanh toán (nâng cao)
-                    7. Đánh giá dịch vụ (nâng cao)
+                    4. Xem order của tôi
+                    5. Hủy order
+                    6. Thanh toán
                     0. Đăng xuất
                     """);
 
@@ -53,16 +54,25 @@ public class CustomerView {
                     viewMenu();
                     break;
                 case 2:
-                    orderFood();
+                    chooseTable();
                     break;
                 case 3:
+                    orderFood();
+                    break;
+                case 4:
                     viewMyOrders();
                     break;
+                case 5:
+                    cancelOrder();
+                    break;
+                case 6:
+                    checkout();
+                    break;
                 case 0:
-                    System.out.println("Thoát menu customer");
+                    System.out.println("Đăng xuất Customer...");
                     return;
                 default:
-                    System.out.println("Sai lựa chọn");
+                    System.out.println("Lựa chọn không hợp lệ");
             }
         }
     }
@@ -76,19 +86,19 @@ public class CustomerView {
         }
 
         System.out.println("\n===== MENU =====");
+        System.out.printf("%-5s %-20s %-10s\n", "ID", "Tên", "Giá");
+
         for (MenuItem m : list) {
-            System.out.printf("%d | %s | %.2f\n",
+            System.out.printf("%-5d %-20s %-10.2f\n",
                     m.getId(),
                     m.getName(),
                     m.getPrice());
         }
     }
 
-    private void orderFood() {
+    private void chooseTable() {
         try {
-            // chon ban
             List<Table> tables = tableService.getAvailableTables();
-
             if (tables.isEmpty()) {
                 System.out.println("Không có bàn trống");
                 return;
@@ -103,29 +113,36 @@ public class CustomerView {
             }
 
             int tableId = InputValidator.inputInt(scanner, "Chọn bàn: ");
-
-            // update trạng thái bàn
-            tableService.occupyTable(tableId);
-
-            // tạo order
             int orderId = orderService.createOrder(userId, tableId);
 
-            // ===== 2. GỌI MÓN =====
+            currentTableId = tableId;
+            currentOrderId = orderId;
+
+            System.out.println("Chọn bàn thành công! Order ID: " + orderId);
+
+        } catch (AppException e) {
+            System.out.println("Lỗi: " + e.getMessage());
+        }
+    }
+
+    private void orderFood() {
+        if (currentOrderId == null) {
+            System.out.println("Bạn chưa chọn bàn!");
+            return;
+        }
+
+        try {
             while (true) {
                 viewMenu();
 
                 int itemId = InputValidator.inputInt(scanner, "Chọn món (0 để thoát): ");
-
                 if (itemId == 0) break;
 
                 int quantity = InputValidator.inputInt(scanner, "Số lượng: ");
-
-                orderService.addItem(orderId, itemId, quantity);
+                orderService.addItem(currentOrderId, itemId, quantity);
 
                 System.out.println("Đã thêm món!");
             }
-
-            System.out.println("Hoàn tất gọi món!");
 
         } catch (AppException e) {
             System.out.println("Lỗi: " + e.getMessage());
@@ -147,6 +164,41 @@ public class CustomerView {
                     o.getTableId(),
                     o.getStatus(),
                     o.getCreatedAt());
+        }
+    }
+
+    private void cancelOrder() {
+        try {
+            int orderId = InputValidator.inputInt(scanner, "Nhập OrderID cần hủy: ");
+            orderService.cancelOrder(orderId);
+
+            if (currentOrderId != null && currentOrderId == orderId) {
+                currentOrderId = null;
+                currentTableId = null;
+            }
+
+            System.out.println("Hủy order thành công!");
+
+        } catch (AppException e) {
+            System.out.println("Lỗi: " + e.getMessage());
+        }
+    }
+
+    private void checkout() {
+        try {
+            int orderId = InputValidator.inputInt(scanner, "Nhập OrderID thanh toán: ");
+            double total = orderService.checkout(orderId);
+
+            System.out.println("Thanh toán thành công!");
+            System.out.println("Tổng tiền: " + total);
+
+            if (currentOrderId != null && currentOrderId == orderId) {
+                currentOrderId = null;
+                currentTableId = null;
+            }
+
+        } catch (AppException e) {
+            System.out.println("Lỗi: " + e.getMessage());
         }
     }
 }

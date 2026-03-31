@@ -25,7 +25,4 @@ public class DbConnection {
         return null;
     }
 
-//    public static void main(String[] args) {
-//        DbConnection.openConnection();
-//    }
 }
