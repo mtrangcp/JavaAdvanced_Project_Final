@@ -154,7 +154,6 @@ public class OrderService {
         tableDAO.updateStatus(order.getTableId(), TableStatus.AVAILABLE);
     }
 
-    // ================= AUTO DONE =================
     public void updateOrderIfDone(int orderId) {
         boolean allServed = orderDetailDAO.checkAllServed(orderId);
 
@@ -163,7 +162,6 @@ public class OrderService {
         }
     }
 
-    // ================= CHECKOUT =================
     public double checkout(int orderId) {
         try {
             conn.setAutoCommit(false);
@@ -204,7 +202,6 @@ public class OrderService {
         }
     }
 
-    // ================= QUERY =================
     public List<Order> getOrdersByUser(int userId) {
         return orderDAO.findByUser(userId);
     }
