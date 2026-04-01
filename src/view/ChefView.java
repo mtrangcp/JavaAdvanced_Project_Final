@@ -3,6 +3,8 @@ package view;
 import exception.AppException;
 import model.entity.OrderDetail;
 import service.OrderDetailService;
+import utils.Color;
+import utils.TablePrinter;
 import validation.InputValidator;
 
 import java.util.List;
@@ -25,7 +27,6 @@ public class ChefView {
                     2. Cập nhật trạng thái món
                     0. Đăng xuất
                     """);
-
             int choice = InputValidator.inputInt(scanner, "Chọn: ");
 
             switch (choice) {
@@ -39,7 +40,7 @@ public class ChefView {
                     System.out.println("Đăng xuất Chef...");
                     return;
                 default:
-                    System.out.println("Sai lựa chọn");
+                    Color.printWarning("Lựa chọn không hợp lệ");
             }
         }
     }
@@ -53,17 +54,10 @@ public class ChefView {
         }
 
         System.out.println("\n===== DANH SÁCH MÓN =====");
-        System.out.printf("%-5s %-8s %-8s %-8s %-12s\n",
-                "ID", "Order", "Item", "Qty", "Status");
-
-        for (OrderDetail od : list) {
-            System.out.printf("%-5d %-8d %-8d %-8d %-12s\n",
-                    od.getId(),
-                    od.getOrderId(),
-                    od.getItemId(),
-                    od.getQuantity(),
-                    od.getStatus());
-        }
+        TablePrinter.printTable(
+                OrderDetail.getHeaders(),
+                list.stream().map(OrderDetail::toRow).toList()
+        );
     }
 
     private void updateStatus() {
@@ -74,11 +68,10 @@ public class ChefView {
             if (id == 0) return;
 
             orderDetailService.updateStatus(id);
-
-            System.out.println("Cập nhật trạng thái thành công!");
+            Color.printSuccess("Cập nhật trạng thái thành công!");
 
         } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError("Lỗi: " + e.getMessage());
         }
     }
 }

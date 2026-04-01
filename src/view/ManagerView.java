@@ -2,11 +2,13 @@ package view;
 
 import exception.AppException;
 import model.constants.Role;
+import model.entity.Order;
 import model.entity.User;
 import service.MenuItemService;
 import service.OrderService;
 import service.TableService;
 import service.UserService;
+import utils.Color;
 import utils.TablePrinter;
 import validation.InputValidator;
 import validation.UserValidator;
@@ -60,7 +62,7 @@ public class ManagerView {
                     System.out.println("Đăng xuất Manager...");
                     return;
                 default:
-                    System.out.println("Lựa chọn không hợp lệ!");
+                    Color.printWarning("Lựa chọn không hợp lệ");
             }
         }
     }
@@ -86,7 +88,8 @@ public class ManagerView {
     }
 
     private void manageUsers() {
-        System.out.println("""
+        while (true){
+            System.out.println("""
                 
                 ===== USER MANAGEMENT =====
                 1. Xem danh sách user
@@ -94,27 +97,28 @@ public class ManagerView {
                 3. Ban/Unban user
                 0. Quay lại
                 """);
-        int choice = InputValidator.inputInt(scanner, "Chọn: ");
+            int choice = InputValidator.inputInt(scanner, "Chọn: ");
 
-        switch (choice) {
-            case 1:
-                viewUsers();
-                break;
-            case 2:
-                createChef();
-                break;
-            case 3:
-                toggleUser();
-                break;
-            case 0:
-                return;
-            default:
-                System.out.println("Sai lựa chọn");
+            switch (choice) {
+                case 1:
+                    viewUsers();
+                    break;
+                case 2:
+                    createChef();
+                    break;
+                case 3:
+                    toggleUser();
+                    break;
+                case 0:
+                    return;
+                default:
+                    Color.printWarning("Lựa chọn không hợp lệ");
+            }
         }
     }
 
     private void viewUsers() {
-        List<User> list = userService.getAllUsers();
+        List<User> list = userService.getCustomerChef();
 
         if (list.isEmpty()) {
             System.out.println("Không có user");
@@ -135,10 +139,10 @@ public class ManagerView {
 
             User user = new User(username,password, fullName, Role.CHEF );
             userService.insertChef(user);
-            System.out.println("Tạo tài khoản Chef thành công!");
+            Color.printSuccess("Tạo tài khoản Chef thành công!");
 
         } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError("Lỗi: " + e.getMessage());
         }
     }
 
@@ -148,10 +152,10 @@ public class ManagerView {
             int id = InputValidator.inputInt(scanner, "Nhập ID user: ");
 
             userService.toggleUserStatus(id);
-            System.out.println("Cập nhật trạng thái thành công!");
+            Color.printSuccess("Cập nhật trạng thái thành công!");
 
         } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError("Lỗi: " + e.getMessage());
         }
     }
 
@@ -164,22 +168,20 @@ public class ManagerView {
                 System.out.println("Không có order nào cần duyệt");
                 return;
             }
-
-            for (var o : list) {
-                System.out.printf("OrderID: %d | Table: %d | Status: %s\n",
-                        o.getId(),
-                        o.getTableId(),
-                        o.getStatus());
-            }
+            TablePrinter.printTable(
+                    Order.getHeaders(),
+                    list.stream().map(Order::toRow).toList()
+            );
 
             int orderId = InputValidator.inputInt(scanner, "Nhập OrderID để duyệt (0 để thoát): ");
             if (orderId == 0) return;
 
             orderService.approveOrder(orderId);
-            System.out.println("Duyệt order thành công!");
+
+            Color.printSuccess("Duyệt order thành công!");
 
         } catch (Exception e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError("Lỗi: " + e.getMessage());
         }
     }
 
@@ -190,19 +192,18 @@ public class ManagerView {
                 2. Món bán chạy
                 0. Quay lại
                 """);
-
         int choice = InputValidator.inputInt(scanner, "Chọn: ");
         switch (choice) {
             case 1:
-                System.out.println("Chưa implement");
+                System.out.println("Chưa làm chức năng này");
                 break;
             case 2:
-                System.out.println("Chưa implement");
+                System.out.println("Chưa làm chức năng này");
                 break;
             case 0:
                 return;
             default:
-                System.out.println("Sai lựa chọn");
+                Color.printWarning("Lựa chọn không hợp lệ");
         }
     }
 }

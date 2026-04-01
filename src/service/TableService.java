@@ -4,6 +4,7 @@ import dao.TableDAO;
 import exception.AppException;
 import model.constants.TableStatus;
 import model.entity.Table;
+import utils.Color;
 import validation.TableValidator;
 
 import java.util.List;
@@ -102,7 +103,7 @@ public class TableService {
         List<Table> list = tableDAO.findByStatus(status);
 
         if (list == null || list.isEmpty()) {
-            throw new AppException("Không có bàn nào phù hợp");
+            Color.printWarning("Không có bàn nào phù hợp");
         }
 
         return list;

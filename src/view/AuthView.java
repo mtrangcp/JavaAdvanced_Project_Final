@@ -3,6 +3,8 @@ package view;
 import exception.AppException;
 import model.entity.User;
 import service.*;
+import utils.Color;
+import validation.InputValidator;
 
 import java.util.Scanner;
 
@@ -35,57 +37,45 @@ public class AuthView {
             System.out.println("1. Đăng ký");
             System.out.println("2. Đăng nhập");
             System.out.println("0. Thoát");
-
-            System.out.print("Chọn: ");
-            String choice = scanner.nextLine();
+            int choice = InputValidator.inputInt(scanner, "Chọn: ");
 
             switch (choice) {
-                case "1":
+                case 1:
                     register();
                     break;
-                case "2":
+                case 2:
                     login();
                     break;
-                case "0":
+                case 0:
                     System.out.println("Thoát...");
                     return;
                 default:
-                    System.out.println("Lựa chọn không hợp lệ");
+                    Color.printWarning("Lựa chọn không hợp lệ");
             }
         }
     }
 
     private void register() {
         try {
-            System.out.print("Username: ");
-            String username = scanner.nextLine();
-
-            System.out.print("Password: ");
-            String password = scanner.nextLine();
-
-            System.out.print("Full name: ");
-            String fullName = scanner.nextLine();
+            String username = InputValidator.inputString(scanner, "Username: ");
+            String password = InputValidator.inputString(scanner, "Password: ");
+            String fullName = InputValidator.inputString(scanner, "Full name: ");
 
             userService.register(username, password, fullName);
-
-            System.out.println("Đăng ký thành công!");
+            Color.printSuccess("Đăng ký thành công!");
 
         } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError(e.getMessage());
         }
     }
 
     private void login() {
         try {
-            System.out.print("Username: ");
-            String username = scanner.nextLine();
-
-            System.out.print("Password: ");
-            String password = scanner.nextLine();
+            String username = InputValidator.inputString(scanner, "Username: ");
+            String password = InputValidator.inputString(scanner, "Password: ");
 
             User user = userService.login(username, password);
-
-            System.out.println("Đăng nhập thành công!");
+            Color.printSuccess("Đăng nhập thành công!");
 
             switch (user.getRole()) {
                 case MANAGER:
@@ -104,7 +94,7 @@ public class AuthView {
             }
 
         } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError("Lỗi: " + e.getMessage());
         }
     }
 

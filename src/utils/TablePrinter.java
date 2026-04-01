@@ -49,7 +49,10 @@ public class TablePrinter {
                 System.out.print(" " + value);
             }
 
-            System.out.print(" ".repeat(colWidths[i] - value.length() + 1) + "|");
+            int realLength = stripColor(value).length();
+            int spaces = colWidths[i] - realLength + 1;
+
+            System.out.print(" ".repeat(Math.max(0, spaces)) + "|");
         }
         System.out.println();
     }

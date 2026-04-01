@@ -4,6 +4,9 @@ import exception.AppException;
 import model.constants.TableStatus;
 import model.entity.Table;
 import service.TableService;
+import utils.Color;
+import utils.TablePrinter;
+import validation.InputValidator;
 
 import java.util.List;
 import java.util.Scanner;
@@ -29,54 +32,47 @@ public class TableManagementView {
             System.out.println("5. Cập nhật");
             System.out.println("6. Xóa");
             System.out.println("0. Quay lại");
-
-            System.out.print("Chọn: ");
-            String choice = scanner.nextLine();
+            int choice = InputValidator.inputInt(scanner, "Chọn: ");
 
             try {
                 switch (choice) {
-                    case "1":
+                    case 1:
                         createTable();
                         break;
-                    case "2":
+                    case 2:
                         showTables(tableService.getAll());
                         break;
-                    case "3":
+                    case 3:
                         findByName();
                         break;
-                    case "4":
+                    case 4:
                         findByStatus();
                         break;
-                    case "5":
+                    case 5:
                         updateTable();
                         break;
-                    case "6":
+                    case 6:
                         deleteTable();
                         break;
-                    case "0":
+                    case 0:
                         return;
                     default:
-                        System.out.println("Lựa chọn không hợp lệ");
+                        Color.printWarning("Lựa chọn không hợp lệ");
                 }
             } catch (AppException e) {
-                System.out.println("Lỗi: " + e.getMessage());
+                Color.printError("Lỗi: " + e.getMessage());
             } catch (Exception e) {
-                System.out.println("Lỗi hệ thống, vui lòng thử lại!");
+                Color.printSuccess("Lỗi hệ thống, vui lòng thử lại!");
             }
         }
     }
 
-    //
-
     private void createTable() {
-        System.out.print("Tên bàn: ");
-        String name = scanner.nextLine();
-
-        System.out.print("Sức chứa: ");
-        int capacity = Integer.parseInt(scanner.nextLine());
+        String name = InputValidator.inputString(scanner, "Tên bàn: ");
+        int capacity = InputValidator.inputInt(scanner, "Sức chứa: ");
 
         tableService.createTable(name, capacity);
-        System.out.println("Thêm bàn thành công!");
+        Color.printSuccess("Thêm bàn thành công!");
     }
 
     private void showTables(List<Table> list) {
@@ -84,54 +80,57 @@ public class TableManagementView {
             System.out.println("Danh sách trống");
             return;
         }
-        list.forEach(System.out::println);
+        TablePrinter.printTable(
+                Table.getHeaders(),
+                list.stream().map(Table::toRow).toList()
+        );
     }
 
     private void findByName() {
-        System.out.print("Nhập tên: ");
-        String name = scanner.nextLine();
-
+        String name = InputValidator.inputString(scanner, "Nhập tên: ");
         try {
             Table table = tableService.findByName(name);
-            System.out.println(table);
+            TablePrinter.printTable(
+                    Table.getHeaders(),
+                    List.of(table).stream().map(Table::toRow).toList()
+            );
 
         } catch (AppException e) {
-            System.out.println("Không tìm thấy");
-            System.out.println(e.getMessage());
+            Color.printWarning("Không tìm thấy");
+            Color.printError(e.getMessage());
         }
     }
 
     private void findByStatus() {
-        System.out.print("Nhập trạng thái (AVAILABLE/OCCUPIED): ");
-        TableStatus status = TableStatus.valueOf(scanner.nextLine().toUpperCase());
+        TableStatus status = InputValidator.inputEnum(
+                scanner,
+                "Nhập trạng thái (AVAILABLE/OCCUPIED/INACTIVE): ",
+                TableStatus.class
+        );
 
         List<Table> list = tableService.findByStatus(status);
         showTables(list);
     }
 
     private void updateTable() {
-        System.out.print("ID: ");
-        int id = Integer.parseInt(scanner.nextLine());
-
-        System.out.print("Tên mới: ");
-        String name = scanner.nextLine();
-
-        System.out.print("Sức chứa: ");
-        int capacity = Integer.parseInt(scanner.nextLine());
-
-        System.out.print("Trạng thái: ");
-        TableStatus status = TableStatus.valueOf(scanner.nextLine().toUpperCase());
+        int id = InputValidator.inputInt(scanner, "ID: ");
+        String name = InputValidator.inputString(scanner, "Tên mới: ");
+        int capacity = InputValidator.inputInt(scanner, "Sức chứa: ");
+        TableStatus status = InputValidator.inputEnum(
+                scanner,
+                "Trạng thái (AVAILABLE/OCCUPIED/INACTIVE): ",
+                TableStatus.class
+        );
 
         tableService.update(id, name, capacity, status);
-        System.out.println("Cập nhật thành công!");
+        Color.printSuccess("Cập nhật thành công!");
     }
 
     private void deleteTable() {
-        System.out.print("ID cần xóa: ");
-        int id = Integer.parseInt(scanner.nextLine());
+        int id = InputValidator.inputInt(scanner, "ID cần xóa: ");
 
         tableService.updateStatus(id, TableStatus.INACTIVE );
-        System.out.println("Xóa thành công!");
+        Color.printSuccess("Xóa thành công!");
     }
 
 }

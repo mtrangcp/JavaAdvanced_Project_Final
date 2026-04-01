@@ -5,6 +5,9 @@ import model.constants.ItemStatus;
 import model.constants.ItemType;
 import model.entity.MenuItem;
 import service.MenuItemService;
+import utils.Color;
+import utils.TablePrinter;
+import validation.InputValidator;
 
 import java.util.List;
 import java.util.Scanner;
@@ -27,58 +30,59 @@ public class MenuItemManagementView {
             System.out.println("4. Cập nhật");
             System.out.println("5. Xóa");
             System.out.println("0. Quay lại");
-
-            System.out.print("Chọn: ");
-            String choice = scanner.nextLine();
+            int choice = InputValidator.inputInt(scanner, "Chọn: ");
 
             try {
                 switch (choice) {
-                    case "1":
+                    case 1:
                         create();
                         break;
-                    case "2":
+                    case 2:
                         show(menuItemService.getAll());
                         break;
-                    case "3":
+                    case 3:
                         findByType();
                         break;
-                    case "4":
+                    case 4:
                         update();
                         break;
-                    case "5":
+                    case 5:
                         delete();
                         break;
-                    case "0":
+                    case 0:
                         return;
                     default:
-                        System.out.println("Sai lựa chọn");
+                        Color.printWarning("Lựa chọn không hợp lệ");
                 }
             } catch (AppException e) {
-                System.out.println("Lỗi: " + e.getMessage());
+                Color.printError("Lỗi: " + e.getMessage());
             } catch (Exception e) {
-                System.out.println("Lỗi hệ thống!");
+                Color.printError("Lỗi hệ thống!");
             }
         }
     }
 
     private void create() {
-        System.out.print("Tên: ");
-        String name = scanner.nextLine();
+        String name = InputValidator.inputString(scanner, "Tên: ");
+        double price = InputValidator.inputDouble(scanner, "Giá: ");
 
-        System.out.print("Giá: ");
-        double price = Double.parseDouble(scanner.nextLine());
-
-        System.out.print("Loại (FOOD/DRINK): ");
-        ItemType type = ItemType.valueOf(scanner.nextLine().toUpperCase());
+        ItemType type = null;
+        while (type == null) {
+            try {
+                String input = InputValidator.inputString(scanner, "Loại (FOOD/DRINK): ");
+                type = ItemType.valueOf(input.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                Color.printError("Loại không hợp lệ! Chỉ nhập FOOD hoặc DRINK");
+            }
+        }
 
         Integer stock = null;
         if (type == ItemType.DRINK) {
-            System.out.print("Stock: ");
-            stock = Integer.parseInt(scanner.nextLine());
+            stock = InputValidator.inputInt(scanner, "Stock: ");
         }
 
         menuItemService.create(name, price, stock, type);
-        System.out.println("Thêm thành công!");
+        Color.printSuccess("Thêm thành công!");
     }
 
     private void show(List<MenuItem> list) {
@@ -86,48 +90,39 @@ public class MenuItemManagementView {
             System.out.println("Danh sách trống");
             return;
         }
-        list.forEach(System.out::println);
+        TablePrinter.printTable(
+                MenuItem.getHeaders(),
+                list.stream().map(MenuItem::toRow).toList()
+        );
     }
 
     private void findByType() {
-        System.out.print("Loại: ");
-        ItemType type = ItemType.valueOf(scanner.nextLine().toUpperCase());
-
+        ItemType type = InputValidator.inputEnum(scanner, "Loại (FOOD/DRINK): ", ItemType.class);
         show(menuItemService.getByType(type));
     }
 
     private void update() {
-        System.out.print("ID: ");
-        int id = Integer.parseInt(scanner.nextLine());
-
-        System.out.print("Tên: ");
-        String name = scanner.nextLine();
-
-        System.out.print("Giá: ");
-        double price = Double.parseDouble(scanner.nextLine());
-
-        System.out.print("Loại: ");
-        ItemType type = ItemType.valueOf(scanner.nextLine().toUpperCase());
+        int id = InputValidator.inputInt(scanner, "ID: ");
+        String name = InputValidator.inputString(scanner, "Tên: ");
+        double price = InputValidator.inputDouble(scanner, "Giá: ");
+        ItemType type = InputValidator.inputEnum(scanner, "Loại (FOOD/DRINK): ", ItemType.class);
 
         Integer stock = null;
         if (type == ItemType.DRINK) {
             System.out.print("Stock: ");
             stock = Integer.parseInt(scanner.nextLine());
         }
-
-        System.out.print("Status: ");
-        ItemStatus status = ItemStatus.valueOf(scanner.nextLine().toUpperCase());
+        ItemStatus status = InputValidator.inputEnum(scanner, "Status: ", ItemStatus.class);
 
         menuItemService.update(id, name, price, stock, type, status);
-        System.out.println("Cập nhật thành công!");
+        Color.printSuccess("Cập nhật thành công!");
     }
 
     private void delete() {
-        System.out.print("ID: ");
-        int id = Integer.parseInt(scanner.nextLine());
+        int id = InputValidator.inputInt(scanner, "ID: ");
 
         menuItemService.delete(id);
-        System.out.println("Xóa thành công!");
+        Color.printSuccess("Xóa thành công!");
     }
 
 }

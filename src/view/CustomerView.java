@@ -1,12 +1,15 @@
 package view;
 
 import exception.AppException;
+import model.constants.TableStatus;
 import model.entity.MenuItem;
 import model.entity.Order;
 import model.entity.Table;
 import service.MenuItemService;
 import service.OrderService;
 import service.TableService;
+import utils.Color;
+import utils.TablePrinter;
 import validation.InputValidator;
 
 import java.util.List;
@@ -72,7 +75,7 @@ public class CustomerView {
                     System.out.println("Đăng xuất Customer...");
                     return;
                 default:
-                    System.out.println("Lựa chọn không hợp lệ");
+                    Color.printWarning("Lựa chọn không hợp lệ");
             }
         }
     }
@@ -86,18 +89,19 @@ public class CustomerView {
         }
 
         System.out.println("\n===== MENU =====");
-        System.out.printf("%-5s %-20s %-10s\n", "ID", "Tên", "Giá");
-
-        for (MenuItem m : list) {
-            System.out.printf("%-5d %-20s %-10.2f\n",
-                    m.getId(),
-                    m.getName(),
-                    m.getPrice());
-        }
+        TablePrinter.printTable(
+                MenuItem.getHeaders(),
+                list.stream().map(MenuItem::toRow).toList()
+        );
     }
 
     private void chooseTable() {
         try {
+            if (currentTableId != null) {
+                Color.printWarning("Bạn đã chọn bàn rồi! Hãy thanh toán hoặc hủy trước.");
+                return;
+            }
+
             List<Table> tables = tableService.getAvailableTables();
             if (tables.isEmpty()) {
                 System.out.println("Không có bàn trống");
@@ -105,23 +109,20 @@ public class CustomerView {
             }
 
             System.out.println("\n===== BÀN TRỐNG =====");
-            for (Table t : tables) {
-                System.out.printf("%d | %s | capacity: %d\n",
-                        t.getId(),
-                        t.getTableName(),
-                        t.getCapacity());
-            }
-
+            TablePrinter.printTable(
+                    Table.getHeaders(),
+                    tables.stream().map(Table::toRow).toList()
+            );
             int tableId = InputValidator.inputInt(scanner, "Chọn bàn: ");
             int orderId = orderService.createOrder(userId, tableId);
 
             currentTableId = tableId;
             currentOrderId = orderId;
 
-            System.out.println("Chọn bàn thành công! Order ID: " + orderId);
+            Color.printSuccess("Chọn bàn thành công! Order ID: " + orderId);
 
         } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError("Lỗi: " + e.getMessage());
         }
     }
 
@@ -141,11 +142,11 @@ public class CustomerView {
                 int quantity = InputValidator.inputInt(scanner, "Số lượng: ");
                 orderService.addItem(currentOrderId, itemId, quantity);
 
-                System.out.println("Đã thêm món!");
+                Color.printSuccess("Đã thêm món!");
             }
 
         } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError("Lỗi: " + e.getMessage());
         }
     }
 
@@ -158,13 +159,10 @@ public class CustomerView {
         }
 
         System.out.println("\n===== ORDER CỦA TÔI =====");
-        for (Order o : list) {
-            System.out.printf("OrderID: %d | Table: %d | Status: %s | Time: %s\n",
-                    o.getId(),
-                    o.getTableId(),
-                    o.getStatus(),
-                    o.getCreatedAt());
-        }
+        TablePrinter.printTable(
+                Order.getHeaders(),
+                list.stream().map(Order::toRow).toList()
+        );
     }
 
     private void cancelOrder() {
@@ -173,14 +171,15 @@ public class CustomerView {
             orderService.cancelOrder(orderId);
 
             if (currentOrderId != null && currentOrderId == orderId) {
+                tableService.updateStatus(currentTableId, TableStatus.AVAILABLE);
                 currentOrderId = null;
                 currentTableId = null;
             }
 
-            System.out.println("Hủy order thành công!");
+            Color.printSuccess("Hủy order thành công!");
 
         } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError("Lỗi: " + e.getMessage());
         }
     }
 
@@ -189,16 +188,17 @@ public class CustomerView {
             int orderId = InputValidator.inputInt(scanner, "Nhập OrderID thanh toán: ");
             double total = orderService.checkout(orderId);
 
-            System.out.println("Thanh toán thành công!");
+            Color.printSuccess("Thanh toán thành công!");
             System.out.println("Tổng tiền: " + total);
 
             if (currentOrderId != null && currentOrderId == orderId) {
+                tableService.updateStatus(currentTableId, TableStatus.AVAILABLE);
                 currentOrderId = null;
                 currentTableId = null;
             }
 
         } catch (AppException e) {
-            System.out.println("Lỗi: " + e.getMessage());
+            Color.printError("Lỗi: " + e.getMessage());
         }
     }
 }

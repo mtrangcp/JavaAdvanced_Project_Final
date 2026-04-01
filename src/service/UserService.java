@@ -83,6 +83,9 @@ public class UserService {
         return userDAO.findAll();
     }
 
+    public List<User> getCustomerChef() {
+        return userDAO.findCustomerChef();
+    }
     public void toggleUserStatus(int userId) {
         User user = userDAO.findById(userId);
 

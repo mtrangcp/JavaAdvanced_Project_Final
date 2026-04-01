@@ -54,6 +54,25 @@ public class UserDAO {
         return list;
     }
 
+    public List<User> findCustomerChef() {
+        List<User> list = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE role IN (?, ?)";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);) {
+            ps.setString(1, "CHEF");
+            ps.setString(2, "CUSTOMER");
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public User findById(int id) {
         String sql = "SELECT * FROM users WHERE id = ?";
 

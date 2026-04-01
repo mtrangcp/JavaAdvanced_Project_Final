@@ -69,25 +69,33 @@ public class OrderService {
     }
 
     public void addItem(int orderId, int itemId, int quantity) {
-        if (quantity <= 0) {
-            throw new AppException("Số lượng phải > 0");
+        try {
+            conn.setAutoCommit(false);
+            if (quantity <= 0) {
+                throw new AppException("Số lượng phải > 0");
+            }
+
+            Order order = orderDAO.findById(orderId);
+            if (order == null) {
+                throw new AppException("Order không tồn tại");
+            }
+
+            if (order.getStatus() != OrderStatus.PENDING) {
+                throw new AppException("Chỉ thêm món khi order PENDING");
+            }
+
+            MenuItem item = menuItemDAO.findById(itemId);
+            if (item == null || item.getStatus() != ItemStatus.AVAILABLE) {
+                throw new AppException("Món không tồn tại hoặc không bán");
+            }
+
+            orderDetailDAO.addItem(orderId, itemId, quantity);
+            conn.commit();
+        } catch (Exception e) {
+            try { conn.rollback(); } catch (SQLException ignored) {}
+            throw new AppException(e.getMessage());
         }
 
-        Order order = orderDAO.findById(orderId);
-        if (order == null) {
-            throw new AppException("Order không tồn tại");
-        }
-
-        if (order.getStatus() != OrderStatus.PENDING) {
-            throw new AppException("Chỉ thêm món khi order PENDING");
-        }
-
-        MenuItem item = menuItemDAO.findById(itemId);
-        if (item == null || item.getStatus() != ItemStatus.AVAILABLE) {
-            throw new AppException("Món không tồn tại hoặc không bán");
-        }
-
-        orderDetailDAO.addItem(orderId, itemId, quantity);
     }
 
     public void approveOrder(int orderId) {
@@ -119,6 +127,7 @@ public class OrderService {
 
             // trừ stock
             for (OrderDetail od : items) {
+                orderDetailDAO.updateStatus(od.getId(), OrderDetailStatus.APPROVED);
                 MenuItem item = menuItemDAO.findById(od.getItemId());
 
                 if (item.getStock() != null) {
@@ -128,7 +137,6 @@ public class OrderService {
             }
 
             orderDAO.updateStatus(orderId, OrderStatus.APPROVED);
-
             conn.commit();
 
         } catch (Exception e) {
